@@ -7,7 +7,7 @@
   <!-- مكتبة الرسم البياني -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Firebase (نسخة متوافقة مع الكود) -->
+  <!-- Firebase compat (النسخة الصحيحة التي تعمل مع الكود) -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
@@ -26,9 +26,7 @@
   <canvas id="chart" width="600" height="300"></canvas>
 
   <script>
-    // ----------------------
-    // 1) إعداد Firebase
-    // ----------------------
+    // إعداد Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyAOh6FNHzWl04-1u_VL4fov_xLf95KYnpw",
       authDomain: "sbl-borrowed.firebaseapp.com",
@@ -39,23 +37,18 @@
       measurementId: "G-WL60V81P60"
     };
 
-    // تشغيل Firebase و Firestore
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
     let chartInstance = null;
 
-    // ----------------------
-    // 2) تحميل الشركات من قاعدة البيانات
-    // ----------------------
+    // تحميل الشركات
     async function loadCompanies() {
       const snapshot = await db.collection("borrowed").get();
       const companies = new Set();
 
       snapshot.forEach(doc => {
-        const data = doc.data();
-        // نستخدم اسم الشركة من الحقل name
-        companies.add(data.name);
+        companies.add(doc.data().name);
       });
 
       const select = document.getElementById("companySelect");
@@ -68,7 +61,6 @@
         select.appendChild(opt);
       });
 
-      // إذا فيه شركة واحدة على الأقل، نعرض رسمها مباشرة
       if (select.options.length > 0) {
         loadChart(select.value);
       }
@@ -76,9 +68,7 @@
       select.onchange = () => loadChart(select.value);
     }
 
-    // ----------------------
-    // 3) عرض الرسم البياني لشركة معينة
-    // ----------------------
+    // عرض الرسم البياني
     async function loadChart(companyName) {
       const snapshot = await db.collection("borrowed")
         .where("name", "==", companyName)
@@ -89,14 +79,12 @@
       const values = [];
 
       snapshot.forEach(doc => {
-        const data = doc.data();
-        dates.push(data.date);
-        values.push(data.borrowed);
+        dates.push(doc.data().date);
+        values.push(doc.data().borrowed);
       });
 
       const ctx = document.getElementById("chart").getContext("2d");
 
-      // لو فيه رسم سابق، نحذفه قبل إنشاء واحد جديد
       if (chartInstance) {
         chartInstance.destroy();
       }
@@ -109,30 +97,14 @@
             label: "الكميات المقترضة",
             data: values,
             borderColor: "blue",
+            borderWidth: 3,
+            tension: 0.3,
             fill: false
           }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            x: {
-              title: {
-                display: true,
-                text: "التاريخ"
-              }
-            },
-            y: {
-              title: {
-                display: true,
-                text: "الكمية"
-              }
-            }
-          }
         }
       });
     }
 
-    // تشغيل تحميل الشركات عند فتح الصفحة
     loadCompanies();
   </script>
 
