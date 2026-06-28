@@ -1,97 +1,140 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-<meta charset="UTF-8">
-<title>رصد الكميات المقترضة</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+  <meta charset="UTF-8">
+  <title>رصد الكميات المقترضة</title>
 
-<style>
-body { font-family: Tahoma; direction: rtl; margin: 20px; }
-select { padding: 10px; font-size: 16px; }
-canvas { margin-top: 30px; }
-</style>
+  <!-- مكتبة الرسم البياني -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Firebase (نسخة متوافقة مع الكود) -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+  <style>
+    body { font-family: Tahoma; direction: rtl; margin: 20px; }
+    select { padding: 10px; font-size: 16px; }
+    canvas { margin-top: 30px; }
+  </style>
 </head>
 
 <body>
 
-<h2>رسم بياني لحركة الكميات المقترضة</h2>
+  <h2>رسم بياني لحركة الكميات المقترضة</h2>
 
-<select id="companySelect"></select>
-<canvas id="chart" width="600" height="300"></canvas>
+  <select id="companySelect"></select>
+  <canvas id="chart" width="600" height="300"></canvas>
 
-<script>
-// ----------------------
-// 1) إعداد Firebase
-// ----------------------
-const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "123456",
-    appId: "YOUR_APP_ID"
-};
+  <script>
+    // ----------------------
+    // 1) إعداد Firebase
+    // ----------------------
+    const firebaseConfig = {
+      apiKey: "AIzaSyAOh6FNHzWl04-1u_VL4fov_xLf95KYnpw",
+      authDomain: "sbl-borrowed.firebaseapp.com",
+      projectId: "sbl-borrowed",
+      storageBucket: "sbl-borrowed.firebasestorage.app",
+      messagingSenderId: "265518562378",
+      appId: "1:265518562378:web:4b7b43bdaab90f51d47ab3",
+      measurementId: "G-WL60V81P60"
+    };
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+    // تشغيل Firebase و Firestore
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-// ----------------------
-// 2) تحميل البيانات من قاعدة البيانات
-// ----------------------
-async function loadCompanies() {
-    const snapshot = await db.collection("borrowed").get();
-    const companies = new Set();
+    let chartInstance = null;
 
-    snapshot.forEach(doc => {
-        companies.add(doc.data().company);
-    });
+    // ----------------------
+    // 2) تحميل الشركات من قاعدة البيانات
+    // ----------------------
+    async function loadCompanies() {
+      const snapshot = await db.collection("borrowed").get();
+      const companies = new Set();
 
-    const select = document.getElementById("companySelect");
-    companies.forEach(c => {
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        // نستخدم اسم الشركة من الحقل name
+        companies.add(data.name);
+      });
+
+      const select = document.getElementById("companySelect");
+      select.innerHTML = "";
+
+      companies.forEach(c => {
         const opt = document.createElement("option");
         opt.value = c;
         opt.textContent = c;
         select.appendChild(opt);
-    });
+      });
 
-    select.onchange = () => loadChart(select.value);
-}
+      // إذا فيه شركة واحدة على الأقل، نعرض رسمها مباشرة
+      if (select.options.length > 0) {
+        loadChart(select.value);
+      }
 
-// ----------------------
-// 3) عرض الرسم البياني
-// ----------------------
-async function loadChart(company) {
-    const snapshot = await db.collection("borrowed")
-        .where("company", "==", company)
+      select.onchange = () => loadChart(select.value);
+    }
+
+    // ----------------------
+    // 3) عرض الرسم البياني لشركة معينة
+    // ----------------------
+    async function loadChart(companyName) {
+      const snapshot = await db.collection("borrowed")
+        .where("name", "==", companyName)
         .orderBy("date")
         .get();
 
-    const dates = [];
-    const values = [];
+      const dates = [];
+      const values = [];
 
-    snapshot.forEach(doc => {
-        dates.push(doc.data().date);
-        values.push(doc.data().value);
-    });
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        dates.push(data.date);
+        values.push(data.borrowed);
+      });
 
-    new Chart(document.getElementById("chart"), {
+      const ctx = document.getElementById("chart").getContext("2d");
+
+      // لو فيه رسم سابق، نحذفه قبل إنشاء واحد جديد
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      chartInstance = new Chart(ctx, {
         type: "line",
         data: {
-            labels: dates,
-            datasets: [{
-                label: "الكميات المقترضة",
-                data: values,
-                borderColor: "blue",
-                fill: false
-            }]
+          labels: dates,
+          datasets: [{
+            label: "الكميات المقترضة",
+            data: values,
+            borderColor: "blue",
+            fill: false
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: "التاريخ"
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: "الكمية"
+              }
+            }
+          }
         }
-    });
-}
+      });
+    }
 
-loadCompanies();
-</script>
+    // تشغيل تحميل الشركات عند فتح الصفحة
+    loadCompanies();
+  </script>
 
 </body>
 </html>
