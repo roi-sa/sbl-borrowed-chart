@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>رصد الكميات المقترضة</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+
+<style>
+body { font-family: Tahoma; direction: rtl; margin: 20px; }
+select { padding: 10px; font-size: 16px; }
+canvas { margin-top: 30px; }
+</style>
+</head>
+
+<body>
+
+<h2>رسم بياني لحركة الكميات المقترضة</h2>
+
+<select id="companySelect"></select>
+<canvas id="chart" width="600" height="300"></canvas>
+
+<script>
+// ----------------------
+// 1) إعداد Firebase
+// ----------------------
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "123456",
+    appId: "YOUR_APP_ID"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ----------------------
+// 2) تحميل البيانات من قاعدة البيانات
+// ----------------------
+async function loadCompanies() {
+    const snapshot = await db.collection("borrowed").get();
+    const companies = new Set();
+
+    snapshot.forEach(doc => {
+        companies.add(doc.data().company);
+    });
+
+    const select = document.getElementById("companySelect");
+    companies.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c;
+        opt.textContent = c;
+        select.appendChild(opt);
+    });
+
+    select.onchange = () => loadChart(select.value);
+}
+
+// ----------------------
+// 3) عرض الرسم البياني
+// ----------------------
+async function loadChart(company) {
+    const snapshot = await db.collection("borrowed")
+        .where("company", "==", company)
+        .orderBy("date")
+        .get();
+
+    const dates = [];
+    const values = [];
+
+    snapshot.forEach(doc => {
+        dates.push(doc.data().date);
+        values.push(doc.data().value);
+    });
+
+    new Chart(document.getElementById("chart"), {
+        type: "line",
+        data: {
+            labels: dates,
+            datasets: [{
+                label: "الكميات المقترضة",
+                data: values,
+                borderColor: "blue",
+                fill: false
+            }]
+        }
+    });
+}
+
+loadCompanies();
+</script>
+
+</body>
+</html>
