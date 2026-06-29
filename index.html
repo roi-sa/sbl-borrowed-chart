@@ -1,22 +1,41 @@
-chartInstance = new Chart(ctx, {
-  type: "line",
-  data: {
-    labels: dates,
-    datasets: [{
-      label: "الكميات المقترضة",
-      data: values,
-      borderColor: "blue",
-      borderWidth: 3,
-      tension: 0.3,
-      fill: false
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: true,
-    scales: {
-      x: { title: { display: true, text: "التاريخ" } },
-      y: { title: { display: true, text: "القيمة" } }
-    }
-  }
-});
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>رصد الكميات المقترضة</title>
+
+  <!-- مكتبة الرسم البياني -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Firebase Modular SDK -->
+  <script type="module" defer>
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, query, where, orderBy, getDocs } 
+      from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAOh6FNHzWl04-1u_VL4fov_xLf95KYnpw",
+      authDomain: "sbl-borrowed.firebaseapp.com",
+      projectId: "sbl-borrowed",
+      storageBucket: "sbl-borrowed.firebasestorage.app",
+      messagingSenderId: "265518562378",
+      appId: "1:265518562378:web:4b7b43bdaab90f51d47ab3",
+      measurementId: "G-WL60V81P60"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let chartInstance = null;
+
+    async function loadCompanies() {
+      const q = query(collection(db, "borrowed"));
+      const snapshot = await getDocs(q);
+
+      const companies = new Set();
+      snapshot.forEach(doc => companies.add(doc.data().name));
+
+      const select = document.getElementById("companySelect");
+      select.innerHTML = "";
+
+      companies.forEach
