@@ -4,14 +4,16 @@
   <meta charset="UTF-8">
   <title>رصد الكميات المقترضة</title>
 
+  <!-- مكتبة الرسم البياني -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <!-- Firebase Modular SDK -->
-  <script type="module">
+  <script type="module" defer>
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, query, where, orderBy, getDocs } 
       from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+    // إعداد Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyAOh6FNHzWl04-1u_VL4fov_xLf95KYnpw",
       authDomain: "sbl-borrowed.firebaseapp.com",
@@ -27,6 +29,7 @@
 
     let chartInstance = null;
 
+    // تحميل الشركات
     async function loadCompanies() {
       const q = query(collection(db, "borrowed"));
       const snapshot = await getDocs(q);
@@ -51,6 +54,7 @@
       select.onchange = () => loadChart(select.value);
     }
 
+    // عرض الرسم البياني
     async function loadChart(companyName) {
       const q = query(
         collection(db, "borrowed"),
@@ -81,8 +85,21 @@
             data: values,
             borderColor: "blue",
             borderWidth: 3,
-            tension: 0.3
+            tension: 0.3,
+            fill: false
           }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              title: { display: true, text: "التاريخ" }
+            },
+            y: {
+              title: { display: true, text: "القيمة" }
+            }
+          }
         }
       });
     }
@@ -91,15 +108,30 @@
   </script>
 
   <style>
-    body { font-family: Tahoma; direction: rtl; margin: 20px; }
-    select { padding: 10px; font-size: 16px; }
-    canvas { margin-top: 30px; }
+    body {
+      font-family: Tahoma;
+      direction: rtl;
+      margin: 20px;
+      text-align: center;
+    }
+    select {
+      padding: 10px;
+      font-size: 16px;
+    }
+    .chart-container {
+      width: 90%;
+      max-width: 700px;
+      height: 400px;
+      margin: 30px auto;
+    }
   </style>
 </head>
 
 <body>
   <h2>رسم بياني لحركة الكميات المقترضة</h2>
   <select id="companySelect"></select>
-  <canvas id="chart" width="600" height="300"></canvas>
+  <div class="chart-container">
+    <canvas id="chart"></canvas>
+  </div>
 </body>
 </html>
