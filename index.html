@@ -28,6 +28,7 @@
 
     let chartInstance = null;
 
+    // تحميل الشركات للقائمة المنسدلة
     async function loadCompanies() {
       const q = query(collection(db, "borrowed"));
       const snapshot = await getDocs(q);
@@ -52,6 +53,7 @@
       select.onchange = () => loadChart(select.value);
     }
 
+    // عرض الرسم البياني
     async function loadChart(companyName) {
       const q = query(
         collection(db, "borrowed"),
@@ -90,22 +92,60 @@
           maintainAspectRatio: true,
 
           plugins: {
-            legend: {
-              display: false   // إزالة المفتاح نهائيًا
-            }
+            legend: { display: false }
           },
 
           scales: {
-            x: {
-              title: { display: true, text: "التاريخ" }
-            },
-            y: {
-              title: { display: true, text: "القيمة" },
-              beginAtZero: true   // المحور يبدأ من الصفر دائمًا
-            }
+            x: { title: { display: true, text: "التاريخ" } },
+            y: { title: { display: true, text: "القيمة" }, beginAtZero: true }
           }
         }
       });
+    }
+
+    // البحث بالرمز
+    async function searchBySymbol() {
+      const symbol = document.getElementById("symbolInput").value.trim();
+      if (!symbol) return;
+
+      const q = query(
+        collection(db, "borrowed"),
+        where("symbol", "==", symbol)
+      );
+
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        alert("لم يتم العثور على شركة بهذا الرمز");
+        return;
+      }
+
+      // الحصول على اسم الشركة
+      const companyName = snapshot.docs[0].data().name;
+
+      // إضافة الشركة للقائمة المنسدلة إذا لم تكن موجودة
+      const select = document.getElementById("companySelect");
+      let exists = false;
+
+      for (let i = 0; i < select.options.length; i++) {
+        if (select.options[i].value === companyName) {
+          exists = true;
+          break;
+        }
+      }
+
+      if (!exists) {
+        const opt = document.createElement("option");
+        opt.value = companyName;
+        opt.textContent = companyName;
+        select.appendChild(opt);
+      }
+
+      // اختيار الشركة تلقائيًا
+      select.value = companyName;
+
+      // عرض الرسم
+      loadChart(companyName);
     }
 
     loadCompanies();
@@ -119,9 +159,10 @@
       text-align: center;
     }
 
-    select {
+    select, input, button {
       padding: 10px;
       font-size: 16px;
+      margin: 5px;
     }
 
     .chart-container {
@@ -140,7 +181,14 @@
 <body>
   <h2>رسم بياني لحركة الكميات المقترضة</h2>
 
+  <!-- القائمة المنسدلة -->
   <select id="companySelect"></select>
+
+  <!-- البحث بالرمز -->
+  <div>
+    <input id="symbolInput" type="text" placeholder="اكتب رمز الشركة">
+    <button onclick="searchBySymbol()">بحث</button>
+  </div>
 
   <div class="chart-container">
     <canvas id="chart"></canvas>
