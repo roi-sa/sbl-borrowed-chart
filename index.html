@@ -38,4 +38,112 @@
       const select = document.getElementById("companySelect");
       select.innerHTML = "";
 
-      companies.forEach
+      companies.forEach(name => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        select.appendChild(opt);
+      });
+
+      if (select.options.length > 0) {
+        loadChart(select.value);
+      }
+
+      select.onchange = () => loadChart(select.value);
+    }
+
+    async function loadChart(companyName) {
+      const q = query(
+        collection(db, "borrowed"),
+        where("name", "==", companyName),
+        orderBy("date")
+      );
+
+      const snapshot = await getDocs(q);
+
+      const dates = [];
+      const values = [];
+
+      snapshot.forEach(doc => {
+        dates.push(doc.data().date);
+        values.push(doc.data().borrowed);
+      });
+
+      const ctx = document.getElementById("chart").getContext("2d");
+
+      if (chartInstance) chartInstance.destroy();
+
+      chartInstance = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: dates,
+          datasets: [{
+            data: values,
+            borderColor: "blue",
+            borderWidth: 3,
+            tension: 0.3,
+            fill: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+
+          plugins: {
+            legend: {
+              display: false   // إزالة المفتاح نهائيًا
+            }
+          },
+
+          scales: {
+            x: {
+              title: { display: true, text: "التاريخ" }
+            },
+            y: {
+              title: { display: true, text: "القيمة" },
+              beginAtZero: true   // المحور يبدأ من الصفر دائمًا
+            }
+          }
+        }
+      });
+    }
+
+    loadCompanies();
+  </script>
+
+  <style>
+    body {
+      font-family: Tahoma;
+      direction: rtl;
+      margin: 20px;
+      text-align: center;
+    }
+
+    select {
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    .chart-container {
+      width: 90%;
+      max-width: 700px;
+      margin: 30px auto;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: auto !important;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>رسم بياني لحركة الكميات المقترضة</h2>
+
+  <select id="companySelect"></select>
+
+  <div class="chart-container">
+    <canvas id="chart"></canvas>
+  </div>
+</body>
+</html>
