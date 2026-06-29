@@ -13,7 +13,6 @@
     import { getFirestore, collection, query, where, orderBy, getDocs } 
       from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // إعداد Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyAOh6FNHzWl04-1u_VL4fov_xLf95KYnpw",
       authDomain: "sbl-borrowed.firebaseapp.com",
@@ -29,7 +28,6 @@
 
     let chartInstance = null;
 
-    // تحميل الشركات
     async function loadCompanies() {
       const q = query(collection(db, "borrowed"));
       const snapshot = await getDocs(q);
@@ -54,7 +52,6 @@
       select.onchange = () => loadChart(select.value);
     }
 
-    // عرض الرسم البياني
     async function loadChart(companyName) {
       const q = query(
         collection(db, "borrowed"),
@@ -91,14 +88,10 @@
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false,
+          maintainAspectRatio: true,
           scales: {
-            x: {
-              title: { display: true, text: "التاريخ" }
-            },
-            y: {
-              title: { display: true, text: "القيمة" }
-            }
+            x: { title: { display: true, text: "التاريخ" } },
+            y: { title: { display: true, text: "القيمة" } }
           }
         }
       });
@@ -111,27 +104,47 @@
     body {
       font-family: Tahoma;
       direction: rtl;
-      margin: 20px;
+      margin: 0;
+      padding: 20px;
+      background: #f7f7f7;
       text-align: center;
     }
+
+    .container {
+      width: 90%;
+      max-width: 800px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
     select {
       padding: 10px;
       font-size: 16px;
+      margin-top: 10px;
     }
-    .chart-container {
-      width: 90%;
-      max-width: 700px;
-      height: 400px;
-      margin: 30px auto;
+
+    .chart-box {
+      margin-top: 30px;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: auto !important;
     }
   </style>
 </head>
 
 <body>
-  <h2>رسم بياني لحركة الكميات المقترضة</h2>
-  <select id="companySelect"></select>
-  <div class="chart-container">
-    <canvas id="chart"></canvas>
+  <div class="container">
+    <h2>رسم بياني لحركة الكميات المقترضة</h2>
+    <select id="companySelect"></select>
+
+    <div class="chart-box">
+      <canvas id="chart"></canvas>
+    </div>
   </div>
 </body>
 </html>
