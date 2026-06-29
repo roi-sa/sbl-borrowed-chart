@@ -1,150 +1,22 @@
-<!DOCTYPE html>
-<html lang="ar">
-<head>
-  <meta charset="UTF-8">
-  <title>رصد الكميات المقترضة</title>
-
-  <!-- مكتبة الرسم البياني -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <!-- Firebase Modular SDK -->
-  <script type="module" defer>
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, query, where, orderBy, getDocs } 
-      from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyAOh6FNHzWl04-1u_VL4fov_xLf95KYnpw",
-      authDomain: "sbl-borrowed.firebaseapp.com",
-      projectId: "sbl-borrowed",
-      storageBucket: "sbl-borrowed.firebasestorage.app",
-      messagingSenderId: "265518562378",
-      appId: "1:265518562378:web:4b7b43bdaab90f51d47ab3",
-      measurementId: "G-WL60V81P60"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    let chartInstance = null;
-
-    async function loadCompanies() {
-      const q = query(collection(db, "borrowed"));
-      const snapshot = await getDocs(q);
-
-      const companies = new Set();
-      snapshot.forEach(doc => companies.add(doc.data().name));
-
-      const select = document.getElementById("companySelect");
-      select.innerHTML = "";
-
-      companies.forEach(name => {
-        const opt = document.createElement("option");
-        opt.value = name;
-        opt.textContent = name;
-        select.appendChild(opt);
-      });
-
-      if (select.options.length > 0) {
-        loadChart(select.value);
-      }
-
-      select.onchange = () => loadChart(select.value);
+chartInstance = new Chart(ctx, {
+  type: "line",
+  data: {
+    labels: dates,
+    datasets: [{
+      label: "الكميات المقترضة",
+      data: values,
+      borderColor: "blue",
+      borderWidth: 3,
+      tension: 0.3,
+      fill: false
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: true,
+    scales: {
+      x: { title: { display: true, text: "التاريخ" } },
+      y: { title: { display: true, text: "القيمة" } }
     }
-
-    async function loadChart(companyName) {
-      const q = query(
-        collection(db, "borrowed"),
-        where("name", "==", companyName),
-        orderBy("date")
-      );
-
-      const snapshot = await getDocs(q);
-
-      const dates = [];
-      const values = [];
-
-      snapshot.forEach(doc => {
-        dates.push(doc.data().date);
-        values.push(doc.data().borrowed);
-      });
-
-      const ctx = document.getElementById("chart").getContext("2d");
-
-      if (chartInstance) chartInstance.destroy();
-
-      chartInstance = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: dates,
-          datasets: [{
-            label: "الكميات المقترضة",
-            data: values,
-            borderColor: "blue",
-            borderWidth: 3,
-            tension: 0.3,
-            fill: false
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          scales: {
-            x: { title: { display: true, text: "التاريخ" } },
-            y: { title: { display: true, text: "القيمة" } }
-          }
-        }
-      });
-    }
-
-    loadCompanies();
-  </script>
-
-  <style>
-    body {
-      font-family: Tahoma;
-      direction: rtl;
-      margin: 0;
-      padding: 20px;
-      background: #f7f7f7;
-      text-align: center;
-    }
-
-    .container {
-      width: 90%;
-      max-width: 800px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-
-    select {
-      padding: 10px;
-      font-size: 16px;
-      margin-top: 10px;
-    }
-
-    .chart-box {
-      margin-top: 30px;
-    }
-
-    canvas {
-      width: 100% !important;
-      height: auto !important;
-    }
-  </style>
-</head>
-
-<body>
-  <div class="container">
-    <h2>رسم بياني لحركة الكميات المقترضة</h2>
-    <select id="companySelect"></select>
-
-    <div class="chart-box">
-      <canvas id="chart"></canvas>
-    </div>
-  </div>
-</body>
-</html>
+  }
+});
