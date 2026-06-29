@@ -4,10 +4,8 @@
   <meta charset="UTF-8">
   <title>رصد الكميات المقترضة</title>
 
-  <!-- مكتبة الرسم البياني -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Firebase Modular SDK -->
   <script type="module" defer>
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, query, where, orderBy, getDocs } 
@@ -28,7 +26,6 @@
 
     let chartInstance = null;
 
-    // تحميل الشركات للقائمة المنسدلة (رمز + اسم)
     async function loadCompanies() {
       const q = query(collection(db, "borrowed"));
       const snapshot = await getDocs(q);
@@ -44,7 +41,7 @@
 
       companies.forEach((name, symbol) => {
         const opt = document.createElement("option");
-        opt.value = name;
+        opt.value = `${symbol} - ${name}`;
         opt.textContent = `${symbol} - ${name}`;
         select.appendChild(opt);
       });
@@ -56,8 +53,10 @@
       select.onchange = () => loadChart(select.value);
     }
 
-    // عرض الرسم البياني
-    async function loadChart(companyName) {
+    async function loadChart(selectedValue) {
+      // استخراج الاسم فقط من القيمة (بعد الشرطة)
+      const companyName = selectedValue.split("-")[1].trim();
+
       const q = query(
         collection(db, "borrowed"),
         where("name", "==", companyName),
@@ -102,7 +101,6 @@
       });
     }
 
-    // البحث بالرمز
     async function searchBySymbol() {
       const symbol = document.getElementById("symbolInput").value.trim();
       if (!symbol) return;
@@ -120,7 +118,7 @@
 
       let exists = false;
       for (let i = 0; i < select.options.length; i++) {
-        if (select.options[i].value === companyName) {
+        if (select.options[i].value.includes(companyName)) {
           exists = true;
           break;
         }
@@ -128,13 +126,13 @@
 
       if (!exists) {
         const opt = document.createElement("option");
-        opt.value = companyName;
+        opt.value = `${symbol} - ${companyName}`;
         opt.textContent = `${symbol} - ${companyName}`;
         select.appendChild(opt);
       }
 
-      select.value = companyName;
-      loadChart(companyName);
+      select.value = `${symbol} - ${companyName}`;
+      loadChart(select.value);
     }
 
     loadCompanies();
@@ -178,7 +176,13 @@
   <h2>رسم بياني لحركة الكميات المقترضة</h2>
 
   <div class="controls">
-    <select id="companySelect"></select>
-    <input id="symbolInput" type="text" placeholder="اكتب رمز الشركة">
     <button onclick="searchBySymbol()">بحث</button>
+    <input id="symbolInput" type="text" placeholder="اكتب رمز الشركة">
+    <select id="companySelect"></select>
   </div>
+
+  <div class="chart-container">
+    <canvas id="chart"></canvas>
+  </div>
+</body>
+</html>
